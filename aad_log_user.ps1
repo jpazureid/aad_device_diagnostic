@@ -138,6 +138,9 @@ Function Get_Other_Logs
     whoami /UPN > $global:full_folder"\whoami_UPN_user.txt" 2>&1 | Out-Null
     whoami /all > $global:full_folder"\whoami_ALL_user.txt" 2>&1 | Out-Null
 
+    # Get user's credential Manager
+    cmdkey.exe /list > $global:full_folder"\credman_user.txt" 2>&1 | Out-Null
+
     # Get SCP from AD
     $Root = [ADSI]"LDAP://RootDSE"
     $rootdn = $Root.rootDomainNamingContext
