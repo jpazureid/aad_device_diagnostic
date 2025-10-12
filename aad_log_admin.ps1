@@ -49,6 +49,7 @@ $global:event_list = @(
     "Microsoft-Windows-DeviceManagement-Enterprise-Diagnostics-Provider/Admin",
     #"Microsoft-Windows-DeviceManagement-Enterprise-Diagnostics-Provider/Autopilot",
     "Microsoft-Windows-DeviceManagement-Enterprise-Diagnostics-Provider/Operational",
+    "Microsoft-Windows-DeviceManagement-Enterprise-Diagnostics-Provider/Enrollment",
     "Microsoft-Windows-TaskScheduler/Operational"
     "Microsoft-Windows-Store/Operational"
 )
@@ -1027,7 +1028,7 @@ Function Get_ALL_Other_INFO
     gpresult /H $global:full_folder"\GPResult_H_admin.html" 2>&1 | OUt-Null
     
     # Credential Manager
-    cmdkey.exe /list > $global:full_folder"\credman.txt" 2>&1 | Out-Null
+    cmdkey.exe /list > $global:full_folder"\credman_admin.txt" 2>&1 | Out-Null
     
     # klist
     klist.exe > $global:full_folder"\klist_admin.txt" 2>&1 | Out-Null
@@ -1038,7 +1039,8 @@ Function Get_ALL_Other_INFO
     klist.exe query_bind > $global:full_folder"\klist_query_bind_admin.txt" 2>&1 | Out-Null
     
     # QFE
-    wmic qfe list > $global:full_folder"\qfe_installed.txt" 2>&1 | Out-Null
+    # wmic qfe list > $global:full_folder"\qfe_installed.txt" 2>&1 | Out-Null
+    Get-HotFix | Out-File -FilePath $global:full_folder"\qfe_installed.txt" 2>&1 | Out-Null
 
     # whoami
     whoami /UPN > $global:full_folder"\whoami_upn_admin.txt" 2>&1 | Out-Null
