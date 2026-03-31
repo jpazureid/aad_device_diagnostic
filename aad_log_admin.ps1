@@ -1,5 +1,8 @@
 # All global parameters
 
+# Set the output encoding to UTF8 to avoid encoding issues when exporting logs to files
+[System.Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+
 # Setting the output width buffer of Out-File to 10000
 $PSDefaultParameterValues['out-file:width'] = 10000
 
@@ -75,7 +78,7 @@ $WAM_Providers =
     '{5836994d-a677-53e7-1389-588ad1420cc5}!0xFFFFFFFF'             #Microsoft.Windows.MicrosoftAccount.TBProvider
     '{3F8B9EF5-BBD2-4C81-B6C9-DA3CDB72D3C5}!0x7'                    #wlidsvc
     '{C10B942D-AE1B-4786-BC66-052E5B4BE40E}!0x3FF'                  #livessp
-    '{05f02597-fe85-4e67-8542-69567ab8fd4f}!0xFFFFFFFF'             #Microsoft-Windows-LiveId, MSAClientTraceLoggingProvider
+    '{05f02597-fe85-4e67-8542-69567ab8fd4f}!0xffffffffffffffff'             #Microsoft-Windows-LiveId, MSAClientTraceLoggingProvider
     '{74D91EC4-4680-40D2-A213-45E2D2B95F50}!0xFFFFFFFF'             #Microsoft.AAD.CloudAp.Provider
     '{4DE9BC9C-B27A-43C9-8994-0915F1A5E24F}!0xFFFFFFFF'             #Microsoft-Windows-AAD
     '{bfed9100-35d7-45d4-bfea-6c1d341d4c6b}!0xFFFFFFFF'             #AADPlugin
@@ -102,14 +105,31 @@ $WAM_Providers =
     '{EF00584A-2655-462C-BC24-E7DE630E7FBF}!0xffffffffffffffff'     #Microsoft.Windows.AppLifeCycle
     '{d48533a7-98e4-566d-4956-12474e32a680}!0xffffffffffffffff'     #RuntimeBrokerActivations
     '{0b618b2b-0310-431e-be64-09f4b3e3e6da}!0xffffffffffffffff'     #Microsoft.Windows.Security.NaturalAuth.wpp << Exist in Auth Logs Until this
+
     '{d0034f5e-3686-5a74-dc48-5a22dd4f3d5b}!0xFFFFFFFF'             #CXH Cloud Experience
-    '{3C49678C-14AE-47FD-9D3A-4FEF5D796DB9}!0xFFFFFFFF'             
-    '{20f61733-57f1-4127-9f48-4ab7a9308ae2}!0xffffffffffffffff'     #InternetServer_wpp
-    '{b3a7698a-0c45-44da-b73d-e181c9b5c8e6}!0xffffffffffffffff'     #WinHttpWPP
-    '{4e749B6A-667D-4C72-80EF-373EE3246B08}!0xffffffffffffffff'     #WinINetWPP
+    '{3C49678C-14AE-47FD-9D3A-4FEF5D796DB9}!0xFFFFFFFF'
+
+    '{acc49822-f0b2-49ff-bff2-1092384822b6}!0xffffffffffffffff' # Microsoft.CAndE.ADFabric.CDJ
+    '{5AA2DC10-E0E7-4BB2-A186-D230D79442D7}!0xffffffffffffffff' # Microsoft.CAndE.ADFabric.CDJ.Recovery
+    '{7ae961f7-1262-48e2-b237-acba331cc970}!0xffffffffffffffff' # Microsoft.CAndE.ADFabric.CDJ.AzureSecureVMJoin
+    '{519B3601-C289-44FB-B3E4-A05841D2790D}!0xffffffffffffffff' # Microsoft.CAndE.ADFabric.WinRT.NGC
+
+    # These three providers are added on Windows client OS, which are related to WAM but not included in the Auth logs. So we need to add them manually to cover more WAM related events.
+    #'{20f61733-57f1-4127-9f48-4ab7a9308ae2}!0xffffffffffffffff'     #InternetServer_wpp
+    #'{b3a7698a-0c45-44da-b73d-e181c9b5c8e6}!0xffffffffffffffff'     #WinHttpWPP
+    #'{4e749B6A-667D-4C72-80EF-373EE3246B08}!0xffffffffffffffff'     #WinINetWPP
 )
 
-# Move this to NGC '{ac01ece8-0b79-5cdb-9615-1b6a4c5fc871}!0xFFFFFFFF'             #Microsoft.Windows.Application.Service
+# Add additional WAM providers on Windows client OS
+$ProductType = (Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\ProductOptions").ProductType
+if ($ProductType -eq "WinNT") {
+    $WAM_Providers += @(
+        '{20f61733-57f1-4127-9f48-4ab7a9308ae2}!0xffffffffffffffff'     #InternetServer_wpp
+        '{b3a7698a-0c45-44da-b73d-e181c9b5c8e6}!0xffffffffffffffff'     #WinHttpWPP
+        '{4e749B6A-667D-4C72-80EF-373EE3246B08}!0xffffffffffffffff'     #WinINetWPP
+        '{E16EC3D2-BB0F-4E8F-BDB8-DE0BEA82DC3D}!0x3F0000054404'     #Edge_WebView
+    )
+}
 
 <# REmove     
 '{1941f2b9-0939-5d15-d529-cd333c8fed83}!0xffffffffffffffff'     #Microsoft.Windows.BackgroundManager
@@ -765,6 +785,8 @@ Function Start_Network_Trace
 {
     #Write-Host " Starting network trace.....`n" -ForegroundColor Blue
     If ($global:verbose_output){Write-Host "We are starting network trace." -ForegroundColor Red}
+    netsh trace start capture=yes maxsize=1 report=disabled | Out-Null
+    netsh trace stop | Out-Null
     netsh trace start capture=yes scenario=InternetClient_dbg maxsize=4096 tracefile=$global:full_net_folder"Network_Trace.etl" | Out-Null
 }
 
